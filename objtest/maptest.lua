@@ -3,26 +3,35 @@ gamestate = {
   map_y = 0,
   blue_block_count = 0,
   heart_count = 0,
+  winpanel_count = 0,
   camera_x=0,
   camera_y=0,
-  camera_offset_x = (8/30),
+  victory=false,
+  winframe=0
 }
 
-player {
-  x=8,
-  y=8
+player = {
+	x=8,
+	y=8,
+	cm=true,
+	cw=true,
+	speed=1,
+	hitbox_x =2,
+	hitbox_y =0,
+	hitbox_w =4,
+	hitbox_h =7
 }
 
 allblueblocks = {}
 
 blueblock = {
+  sprite = 4,
   x=0,
   y=0,
-  boundx1 = 0,
-  boundx2 = 8,
-  boundy1 = 0,
-  boundy2 = 8,
-  sprite = 4
+  hitbox_x=0,
+  hitbox_y=0,
+  hitbox_w=8,
+  hitbox_h=8
 }
 
 function blueblock:new(o)
@@ -34,17 +43,16 @@ end
 
 function blueblock:draw() 
   spr(self.sprite, self.x, self.y)
-  color(8)
 end
 
 heart = {
   x=0,
   y=0,
-  boundx1 = 1,
-  boundx2 = 4,
-  boundy1 = 2,
-  boundy2 = 5,
   sprite = 6,
+ 	hitbox_x =2,
+ 	hitbox_y =3,
+ 	hitbox_w =4,
+ 	hitbox_h =5,
   offset_y = 0.01,
   offset_speed = 0.25
 }
@@ -70,6 +78,42 @@ end
 
 function heart:draw()
   spr(self.sprite, self.x, self.y + self.offset_y)
+end
+
+
+winpanel = {
+  sprite = 7,
+  x=0,
+  y=0,
+  hitbox_x=0,
+  hitbox_y=0,
+  hitbox_w=8,
+  hitbox_h=8
+}
+
+allwinpanels = {}
+
+function winpanel:new(o)
+  o = o or {}
+  setmetatable(o,self)
+  self.__index = self
+  return o
+end
+
+function winpanel:draw() 
+  spr(self.sprite, self.x, self.y)
+end
+
+
+function position_camera()
+  local cx = player.x - 28
+  local cy = player.y - 28
+  if cx < 0 then cx = 0 end
+  if cx > 64 then cx = 64 end
+  if cy < 0 then cy = 0 end
+  if cy > 64 then cy = 64 end
+  gamestate.camera_x = cx
+  gamestate.camera_y = cy
 end
 
 
@@ -99,64 +143,71 @@ level2map = {
  1,0,1,0,0,1,0,0,1,0,1,1,0,1,0,1,
  1,0,0,0,0,1,0,0,1,0,1,0,0,1,0,1,
  1,0,1,1,1,1,1,1,1,0,1,0,1,1,0,1,
- 1,0,0,0,0,0,0,0,0,0,1,0,0,1,0,1,
+ 1,0,0,0,0,0,0,0,0,0,1,0,0,1,7,1,
  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 }
 
-function hero_down()
-  local okay_to_move = true
-  for bb in all(allblueblocks) do
-    if (bb.y == player.y +1 ) then
-      if (bb.x-7 >= player.x and bb.x+8 <= player.x) then
-        okay_to_move = false
-      end
+
+function old_collide(obj, other)
+    if
+        other.pos.x+other.hitbox.x+other.hitbox.w > obj.pos.x+obj.hitbox.x and 
+        other.pos.y+other.hitbox.y+other.hitbox.h > obj.pos.y+obj.hitbox.y and
+        other.pos.x+other.hitbox.x < obj.pos.x+obj.hitbox.x+obj.hitbox.w and
+        other.pos.y+other.hitbox.y < obj.pos.y+obj.hitbox.y+obj.hitbox.h 
+    then
+        return true
     end
-  end
-  if okay_to_move == true then player.y += 1 end
 end
 
-function hero_up()
-  local okay_to_move = true
-  for bb in all(allblueblocks) do
-    if (bb.y+8 <= player.y and bb.y-(player.y-8) >= 0) then
-      if (bb.x >= player.x and bb.x < player.x+8) then
-        okay_to_move = false
-      end
+function collide(obj, other)
+    if
+        other.x+other.hitbox_x+other.hitbox_w > obj.x+obj.hitbox_x and 
+        other.y+other.hitbox_y+other.hitbox_h > obj.y+obj.hitbox_y and
+        other.x+other.hitbox_x < obj.x+obj.hitbox_x+obj.hitbox_w and
+        other.y+other.hitbox_y < obj.y+obj.hitbox_y+obj.hitbox_h 
+    then
+        return true
     end
-  end
-  if okay_to_move == true then player.y -= 1 end
 end
 
-function hero_right()
-  local okay_to_move = true
-  for bb in all(allblueblocks) do
-    if (bb.x >= player.x + 8 and bb.x-(player.x+8) <= 0) then
-      if (bb.y >= player.y and bb.y < player.y+8) then
-        okay_to_move = false
-      end
+function player_move()
+  local original_x = player.x
+  local original_y = player.y
+  if btn(0) then player.x -= player.speed end
+  if btn(1) then player.x += player.speed end
+  if btn(2) then player.y -= player.speed end
+  if btn(3) then player.y += player.speed end
+  for this_blue_block in all(allblueblocks) do
+    if collide(player,this_blue_block)==true then
+      player.x = original_x
+      player.y = original_y
     end
   end
-  if okay_to_move == true then player.x += 1 end
-end
-
-function hero_left()
-  local okay_to_move = true
-  for bb in all(allblueblocks) do
-    if (bb.x+8 <= player.x and bb.x-(player.x-8) >= 0) then
-      if (bb.y >= player.y and bb.y < player.y+8) then
-        okay_to_move = false
-      end
+  for this_heart in all(allhearts) do 
+    if collide(player,this_heart)==true then
+      del(allhearts,this_heart)
     end
   end
-  if okay_to_move == true then player.x -= 1 end
+  for this_winner in all(allwinpanels) do
+    if collide(player,this_winner) == true then
+      gamestate.victory=true
+      del(allwinpanels,this_winner)
+    end -- end if
+  end -- end for
 end
 
-
-function update_character()
-  if btn(0) then hero_left() end
-  if btn(1) then hero_right() end
-  if btn(2) then hero_up() end
-  if btn(3) then hero_down() end
+function draw_win_msg()
+  if gamestate.winframe >= 32 then gamestate.winframe = 0 else gamestate.winframe += 1 end
+  local drawcolor = flr(gamestate.winframe/2)
+  local shadowcolor = 0
+  local draw_x = 16 + gamestate.camera_x
+  local draw_y = 29 + gamestate.camera_y
+  local draw_msg = "you win!"
+  if drawcolor >= 7 then shadowcolor = drawcolor - 8 else shadowcolor = drawcolor + 8 end
+  color(shadowcolor)
+  print(draw_msg,draw_x+1,draw_y+1)
+  color(drawcolor)
+  print(draw_msg,draw_x,draw_y)
 end
 
 
@@ -182,28 +233,25 @@ function _init()
       allhearts[gamestate.heart_count].x = block_x * 8
       allhearts[gamestate.heart_count].y = block_y * 8
     end
+    if i==7 then
+      gamestate.winpanel_count += 1
+      allwinpanels[gamestate.winpanel_count] = winpanel:new()
+      allwinpanels[gamestate.winpanel_count].x = block_x * 8
+      allwinpanels[gamestate.winpanel_count].y = block_y * 8
+    end
     block_x += 1
   end
 end
 
 function _update() 
-  update_character()
   for this_heart in all(allhearts) do
     this_heart:bounce()
   end
-  if gamestate.camera_x <= 0 then gamestate.camera_offset = (8/30) end
-  if gamestate.camera_x >= 64 then gamestate.camera_offset = (-8/30) end
-  gamestate.camera_x += gamestate.camera_offset
+  position_camera()
+  camera(gamestate.camera_x,gamestate.camera_y)
+  player_move()
 end
 
-function debug_blocks()
-  local counter = 0
-  for this_block in all(allblueblocks) do
-    counter += 1
-  end
-  color(8)
-  print("blocks: " .. counter,0,32)
-end
 
 function _draw()
   cls()
@@ -216,6 +264,10 @@ function _draw()
   end
   for this_heart in all(allhearts) do
     this_heart:draw()
+  end  
+  for this_winpanel in all(allwinpanels) do
+    this_winpanel:draw()
   end
   spr(48,player.x,player.y)
+  if gamestate.victory==true then draw_win_msg() end
 end
