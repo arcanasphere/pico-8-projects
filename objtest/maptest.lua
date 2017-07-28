@@ -13,6 +13,10 @@ gamestate = {
 player = {
 	x=8,
 	y=8,
+	sprite=48,
+	direction=3,
+	anim_frame=0,
+	sprite_flip=false,
 	cm=true,
 	cw=true,
 	speed=1,
@@ -21,6 +25,16 @@ player = {
 	hitbox_w =4,
 	hitbox_h =7
 }
+
+function update_player()
+  if player.anim_frame >= 14 then player.anim_frame = 0 end
+  if player.anim_frame >= 7 then player.sprite_flip = false else player.sprite_flip = true end
+  player.anim_frame += 1
+end
+
+function draw_player()
+  spr(player.sprite,player.x, player.y, 1, 1, player.sprite_flip, false)
+end
 
 allblueblocks = {}
 
@@ -117,6 +131,28 @@ function position_camera()
 end
 
 
+function add_item (add_i,add_x,add_y)
+    if add_i==1 then
+      gamestate.blue_block_count +=1
+      allblueblocks[gamestate.blue_block_count] = blueblock:new()     
+      allblueblocks[gamestate.blue_block_count].x = add_x
+      allblueblocks[gamestate.blue_block_count].y = add_y
+    end
+    if add_i==3 then
+      gamestate.heart_count += 1
+      allhearts[gamestate.heart_count] = heart:new()
+      allhearts[gamestate.heart_count].x = add_x
+      allhearts[gamestate.heart_count].y = add_y
+    end
+    if add_i==7 then
+      gamestate.winpanel_count += 1
+      allwinpanels[gamestate.winpanel_count] = winpanel:new()
+      allwinpanels[gamestate.winpanel_count].x = add_x
+      allwinpanels[gamestate.winpanel_count].y = add_y
+    end
+end
+
+
 level1map = {
  0,1,0,0,0,0,0,0,
  0,1,1,1,1,1,1,0,
@@ -148,26 +184,16 @@ level2map = {
 }
 
 
-function old_collide(obj, other)
-    if
-        other.pos.x+other.hitbox.x+other.hitbox.w > obj.pos.x+obj.hitbox.x and 
-        other.pos.y+other.hitbox.y+other.hitbox.h > obj.pos.y+obj.hitbox.y and
-        other.pos.x+other.hitbox.x < obj.pos.x+obj.hitbox.x+obj.hitbox.w and
-        other.pos.y+other.hitbox.y < obj.pos.y+obj.hitbox.y+obj.hitbox.h 
-    then
-        return true
-    end
-end
 
 function collide(obj, other)
-    if
-        other.x+other.hitbox_x+other.hitbox_w > obj.x+obj.hitbox_x and 
-        other.y+other.hitbox_y+other.hitbox_h > obj.y+obj.hitbox_y and
-        other.x+other.hitbox_x < obj.x+obj.hitbox_x+obj.hitbox_w and
-        other.y+other.hitbox_y < obj.y+obj.hitbox_y+obj.hitbox_h 
-    then
-        return true
-    end
+  if
+    other.x+other.hitbox_x+other.hitbox_w > obj.x+obj.hitbox_x and 
+    other.y+other.hitbox_y+other.hitbox_h > obj.y+obj.hitbox_y and
+    other.x+other.hitbox_x < obj.x+obj.hitbox_x+obj.hitbox_w and
+    other.y+other.hitbox_y < obj.y+obj.hitbox_y+obj.hitbox_h 
+  then
+    return true
+  end
 end
 
 function player_move()
@@ -221,24 +247,7 @@ function _init()
       block_x = 0
       block_y += 1
     end
-    if i==1 then
-      gamestate.blue_block_count +=1
-      allblueblocks[gamestate.blue_block_count] = blueblock:new()     
-      allblueblocks[gamestate.blue_block_count].x = block_x * 8
-      allblueblocks[gamestate.blue_block_count].y = block_y * 8
-    end
-    if i==3 then
-      gamestate.heart_count += 1
-      allhearts[gamestate.heart_count] = heart:new()
-      allhearts[gamestate.heart_count].x = block_x * 8
-      allhearts[gamestate.heart_count].y = block_y * 8
-    end
-    if i==7 then
-      gamestate.winpanel_count += 1
-      allwinpanels[gamestate.winpanel_count] = winpanel:new()
-      allwinpanels[gamestate.winpanel_count].x = block_x * 8
-      allwinpanels[gamestate.winpanel_count].y = block_y * 8
-    end
+    if i > 0 then add_item(i, block_x * 8, block_y * 8) end
     block_x += 1
   end
 end
@@ -249,6 +258,7 @@ function _update()
   end
   position_camera()
   camera(gamestate.camera_x,gamestate.camera_y)
+  update_player()
   player_move()
 end
 
@@ -268,6 +278,6 @@ function _draw()
   for this_winpanel in all(allwinpanels) do
     this_winpanel:draw()
   end
-  spr(48,player.x,player.y)
+  draw_player()
   if gamestate.victory==true then draw_win_msg() end
 end
