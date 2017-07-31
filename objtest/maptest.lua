@@ -153,17 +153,6 @@ function add_item (add_i,add_x,add_y)
 end
 
 
-level1map = {
- 0,1,0,0,0,0,0,0,
- 0,1,1,1,1,1,1,0,
- 0,1,0,0,0,0,0,0,
- 0,1,0,1,1,0,1,0,
- 0,1,0,1,1,0,1,0,
- 0,1,0,1,0,0,1,0,
- 0,1,0,1,0,1,1,1,
- 0,0,0,1,0,0,0,0
-}
-
 level2map = {
  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
  1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,1,
@@ -267,7 +256,6 @@ function _draw()
   cls()
 --  camera(gamestate.camera_x, gamestate.camera_y)
   local counter = 0
-  map(0,0,gamestate.map_x,0,16,16)
   map(0,0,gamestate.map_x,0,16,16)
   for this_block in all(allblueblocks) do
     this_block:draw()
