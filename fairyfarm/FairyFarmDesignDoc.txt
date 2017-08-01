@@ -1,0 +1,31 @@
+A 5 minute faux 4x game. 
+
+Somewhat like a clicker, too.
+
+5 minute time limit, after which some [DANGER] will walk up the screen toward the fairy.
+
+Fairy must walk to [ENERGY], capture it, and bring it home.  Fairy can capture 1 at a time.
+(Rose petals from a rosebush)
+
+Fairy can create [Wisps], which gather 1 [Rose Petal / Energy] per second, each. 
+
+[Moths] cost eight times as much as a Wisp but bring in 10 times as many petals.
+
+At a much larger cost, Fairy can create one [Mushroom].  Mushrooms will serve as land-mines for the enemy.
+
+Consider a car that is an 8x16 graphic scaled to 32x64  
+
+After 5 minutes, the car drives from the South end of the screen.  
+
+If it touches the Tree of Faries then the player loses.
+
+If it 
+
+
+
+
+
+Map should be at least 32 tiles square. 
+
+Rewards for exploring
+* Unlock wisp? 
