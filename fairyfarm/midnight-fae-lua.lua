@@ -3,18 +3,33 @@
 
 function init_world ()
  gamestate={
-  mode=1, -- 0=into, 1=game, 2=menu, 3=info, 4=end
+  mode=0, -- 0=into, 1=game, 2=menu, 3=info, 4=end
   timeleft=300,
-  wisps_unlocked = false,
+  shroom_price_hike = 1,
+  bug_price_hike = 1,
+  match_price_hike = 1,
+  hike_rate = 1.0125,
   frame=0,
-  petals=0,
+  petals=5,
   wisps=0,
-  moths=0
+  moths=0,
+ }
+ 
+ title = {
+  frame=0,
+  frame_out=0,
+  state=0,
+  transition_frame = 0,
+  fairy_x=16,
+  fairy_y=16,
+  fairy_frame=0,
+  cloud_x = -18,
+  cloud_y = 6
  }
 
  player = {
   x=62,
-  y=8,
+  y=25,
   sprite=1,
   hitbox_x=0,
   hitbox_y=0,
@@ -38,17 +53,24 @@ function init_world ()
   items = 3
  }
  
- prices = {
+ original_prices = {
   mushroom = 10,
-  wisp = 5,  
+  wisp = 10,  
   match = 25,
   moth = 40
  }
  
+ prices = {
+  mushroom = original_prices.mushroom,
+  wisp = original_prices.wisp/2,
+  match = original_prices.match,
+  moth = original_prices.moth
+ }
+ 
  menu_items = {}
- menu_items[1] = "mushroom " .. prices.mushroom
- menu_items[2] = "wisp      " .. prices.wisp
- menu_items[3] = "match    " .. prices.match
+ menu_items[1] = "shroom " .. prices.mushroom
+ menu_items[2] = "wisp    " .. prices.wisp
+ menu_items[3] = "match  " .. prices.match
 
  
  daffs = {} -- table of daffodils
@@ -67,8 +89,8 @@ function init_world ()
  moths = {}
  
  fairycircle = {
-  x=72,
-  y=6,
+  x=56,
+  y=0,
   hitbox_x = 0,
   hitbox_y = 0,
   hitbox_w = 16,
@@ -227,12 +249,10 @@ function init_cloud()
  for i=16,255 do
   cloud[i] = 1
  end
+ cloud[23]=0
  cloud[24]=0
- cloud[25]=0
- cloud[26]=0
+ cloud[39]=0
  cloud[40]=0
- cloud[41]=0
- cloud[42]=0
 end
 
 
@@ -278,7 +298,7 @@ function check_collision_flowers()
   end
   if collide(player,candle) then
    if(player.matches > 0 and candle.lit == false) then
-     add(menu_items,"moth     " .. prices.moth)
+     menu_items[4] = "moth   " .. prices.moth
      menu.items += 1
      player.matches -= 1
      candle.lit = true
@@ -329,6 +349,29 @@ function update_player ()
   if player.frame >=16 then player.frame = 0 end
   if player.frame > 8 then player.sprite=2 else player.sprite=1 end
 end
+
+function update_title_screen() 
+ if ( title.state == 1 and title.transition_frame == 8 ) then
+  gamestate.mode=1
+  title.state=0
+  title.transition_frame=0
+ end
+ if title.state == 1 then
+   title.transition_frame += 1
+ end
+ if btnp(4) then
+   if title.state==0 then title.state=1 end
+ end
+ if btnp(5) then
+   if title.state==0 then title.state=1 end
+ end
+ if title.fairy_frame >= 150 then title.fairy_frame = 0 end
+ if title.fairy_frame < 75 then title.fairy_y += 0.2 else title.fairy_y -= 0.2 end
+ title.fairy_frame += 1 
+ title.cloud_x += 0.5
+ if title.cloud_x >= 80 then title.cloud_x = -18 end
+end
+
 
 function update_viewport()
  viewport.x=player.x-29
@@ -390,6 +433,8 @@ function update_menu()
       if gamestate.petals >= prices.mushroom then
         mushroom.hp += 1
         gamestate.petals -= prices.mushroom
+        gamestate.shroom_price_hike *= gamestate.hike_rate
+        update_prices()
       else 
         sfx(0)
       end
@@ -398,8 +443,8 @@ function update_menu()
     if gamestate.petals >= prices.wisp then
         new_wisp()
         gamestate.petals -= prices.wisp
-        prices.wisp = 10
-        menu_items[2] = "wisp     " .. prices.wisp
+        gamestate.bug_price_hike *= gamestate.hike_rate
+        update_prices()
       else 
         sfx(0)
       end
@@ -408,6 +453,8 @@ function update_menu()
     if (gamestate.petals >= prices.match and player.matches < 1)then
         player.matches += 1
         gamestate.petals -= prices.match
+        gamestate.match_price_hike *= gamestate.hike_rate
+        update_prices()
       else 
         sfx(0)
       end
@@ -416,6 +463,8 @@ function update_menu()
     if gamestate.petals >= prices.moth then
         new_moth()
         gamestate.petals -= prices.moth
+        gamestate.bug_price_hike *= gamestate.hike_rate
+        update_prices()
       else 
         sfx(0)
       end
@@ -428,19 +477,45 @@ function update_petals()
   if gamestate.petals > 9999 then gamestate.petals = 9999 end
 end
 
+function update_prices()
+  prices.mushroom = flr(gamestate.shroom_price_hike * original_prices.mushroom)
+  prices.wisp = flr(gamestate.bug_price_hike * original_prices.wisp)
+  prices.match = flr(gamestate.match_price_hike * original_prices.match)
+  menu_items[1] = "shroom " .. prices.mushroom
+  menu_items[2] = "wisp   " .. prices.wisp
+  menu_items[3] = "match  " .. prices.match
+  if candle.lit == true then
+   prices.moth = flr(gamestate.bug_price_hike * original_prices.moth)
+   menu_items[4] = "moth   " .. prices.moth
+  end
+end
+
 
 
 
 -- draw functions
+
 function draw_game()
  clip(0,6,128,122)
  map(0,0,0,0,16,16,0)
- map(16,0,0,0,16,16,1)
+ map(16,0,0,0,16,16,0)
  draw_flowers()
  draw_cloud()
  clip()
  draw_header()
  spr(player.sprite,player.x,player.y)
+end
+
+
+function draw_title_screen()
+ camera(0,0)
+ spr(66,54,2)
+ for i=0, 8 do   
+   spr(96+i,i*8,48)
+   spr(112+i,i*8,56)
+ end
+ spr(64,title.cloud_x,title.cloud_y)
+ spr(65,title.cloud_x+8,title.cloud_y)
 end
 
 
@@ -539,7 +614,18 @@ end
 
 
 
-
+function draw_menu_fairy()
+  local x = title.fairy_x
+  local y = title.fairy_y
+  for i=0,4 do
+    spr(71+i,x+(i*8),y)
+    spr(87+i,x+(i*8),y+8)
+    spr(104,x+8,y+16)
+    spr(105,x+16,y+16)
+    spr(120,x+8,y+24)
+    spr(121,x+16,y+24)
+  end
+end
 
 
 
@@ -556,14 +642,17 @@ function _init()
   poke(0x5f2c,3)
   init_world()
   init_cloud()
-  new_daff(40,40,false)
-  new_daff(50,40,true)
-  new_lilac(60,40,true)
-  new_lilac(70,40,false)
+--  new_daff(40,40,false)
+--  new_daff(50,40,true)
+--  new_lilac(60,40,true)
+--  new_lilac(70,40,false)
   new_rosebush(8,8,false,500)
 end
 
 function _update()
+ if gamestate.mode == 0 then
+  update_title_screen()
+ end
  if gamestate.mode==1 then
   update_player()
   update_cloud()
@@ -579,6 +668,18 @@ end
 
 function _draw()
  cls()
+ if gamestate.mode == 0 then
+   draw_title_screen()
+   draw_menu_fairy()
+   color(0)
+   print("midnight",3,5)
+   color(2)
+   print("midnight",2,4)
+   color(0)
+   print("faerie",3,11)
+   color(12)
+   print("faerie",2,10)
+ end
  if gamestate.mode == 1 then
   draw_game()
  end
