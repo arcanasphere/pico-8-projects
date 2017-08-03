@@ -1,3 +1,5 @@
+Midnight Faerie
+
 A 5 minute faux 4x game. 
 
 Somewhat like a clicker, too.
@@ -29,3 +31,44 @@ Map should be at least 32 tiles square.
 
 Rewards for exploring
 * Unlock wisp? 
+
+
+Wisp - costs 5 per, deploy with Z. Collects 1 petal per second.
+
+Moth - costs 20 per.  Collects 5 petals per second.  Unlock match (25 petals) and bring to candle.
+
+Mushrooms - cost 10 each, does 1 damage to cyclops when stepped on.
+
+???Projectile??? -- costs a lot, does bigger damage.  
+
+Moth should only be hirable when found hovering near a candle.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+1,1,1,1,1,1,0,0,0,0,0,1,0,1,0,1,
+0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,
+0,1,1,1,1,1,0,0,0,0,0,1,0,1,0,1,
+0,1,0,0,0,0,0,0,0,0,0,1,0,1,0,1,
+0,1,0,1,1,1,0,0,0,0,0,1,0,1,0,1,
+0,1,0,0,0,1,0,0,0,0,0,1,0,1,1,1,
+0,1,1,1,0,1,0,0,0,0,0,1,0,0,0,0,
+0,0,0,1,0,1,0,0,0,0,0,1,0,1,1,0,
+1,1,1,1,0,1,0,0,0,0,0,1,0,1,0,0,
+0,0,0,0,0,1,0,0,0,0,0,1,0,1,0,1,
+0,1,1,1,1,1,0,0,0,0,0,1,0,1,0,0,
+0,1,0,0,0,1,0,0,0,0,0,1,0,1,1,1,
+0,0,0,1,0,1,0,0,0,0,0,1,0,0,0,0

@@ -10,9 +10,10 @@ function init_world ()
   match_price_hike = 1,
   hike_rate = 1.0125,
   frame=0,
-  petals=5,
+  petals=0,
   wisps=0,
   moths=0,
+  matches_bought=0,
  }
  
  title = {
@@ -68,7 +69,7 @@ function init_world ()
  }
  
  menu_items = {}
- menu_items[1] = "shroom " .. prices.mushroom
+ menu_items[1] = "berry  " .. prices.mushroom
  menu_items[2] = "wisp    " .. prices.wisp
  menu_items[3] = "match  " .. prices.match
 
@@ -81,6 +82,28 @@ function init_world ()
 
  rosebushes = {}
  rosebushcount = 0
+ 
+ venus = {}
+ venuscount = 0
+ 
+ venus_map = {
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		2,1,2,1,2,1,0,0,0,0,0,2,0,1,0,2,
+		0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,
+		0,1,1,1,1,1,0,0,0,0,0,1,0,1,0,1,
+		0,1,0,0,0,0,0,0,0,0,0,1,0,1,0,1,
+		0,1,0,1,1,1,0,0,0,0,0,1,0,1,0,1,
+		0,1,0,0,0,1,0,0,0,0,0,1,0,1,1,1,
+		1,1,1,1,0,1,0,0,0,0,0,1,0,0,0,0,
+		0,0,0,1,0,1,0,0,0,0,0,1,0,1,0,0,
+		1,1,1,1,0,1,0,0,0,0,0,1,0,1,0,0,
+		0,0,0,0,0,1,0,0,0,0,0,1,0,1,0,1,
+		0,1,1,2,2,2,0,0,0,0,0,2,0,2,0,0,
+		0,1,0,0,0,2,0,0,0,0,0,2,0,2,2,2,
+		0,0,0,1,0,2,0,0,0,0,0,2,0,0,0,0
+ }
  
  logs= {}
  logcount=0
@@ -111,13 +134,13 @@ function init_world ()
  
  mushroom = {
   x=63,
-  y=96,
+  y=58,
   hitbox_x=0,
   hitbox_y=0,
   hitbox_w=2,
   hitbox_h=2,
   hp=0,
-  size=1
+  size=1,
  }
   
  cyclops = {
@@ -200,6 +223,22 @@ function new_rosebush(x,y,flipme,petals)
  end
 end
 
+function new_venus(x,y,venus_color)
+ venuscount +=1
+ venus[venuscount] = obj:new()
+ venus[venuscount].x = x
+ venus[venuscount].y = y
+ venus[venuscount].hitbox_x = 0
+ venus[venuscount].hitbox_y = 0
+ venus[venuscount].hitbox_w = 8
+ venus[venuscount].hitbox_h = 8
+ venus[venuscount].frame = flr(rnd(22))
+ venus[venuscount].sprite = 204
+ venus[venuscount].sprite_offset = 0
+ if venus_color=="red" then venus[venuscount].sprite_offset = 16 end
+end
+
+
 function new_log(x,y,flipme)  
   logcount += 1
   logs[logcount] = obj:new()
@@ -229,7 +268,7 @@ function new_moth()
   moths[gamestate.moths] = obj:new()
   moths[gamestate.moths].frame = 0
   moths[gamestate.moths].maxframe = 30
-  moths[gamestate.moths].addpetals = 5
+  moths[gamestate.moths].addpetals = 5  --default 5
 end
 
 
@@ -240,7 +279,21 @@ end
 
 
 
+-- other initialization functions
 
+function init_flowers() 
+ local count_x = 0
+ local count_y = 0
+ for i=0,255 do
+   if count_x >= 16 then
+     count_x = 0
+     count_y += 1
+   end
+   if venus_map[i] == 1 then new_venus(count_x*8,count_y*8,"yellow") end
+   if venus_map[i] == 2 then new_venus(count_x*8,count_y*8,"red") end
+   count_x += 1
+ end
+end
 
 function init_cloud()
  for i=0,15 do
@@ -278,6 +331,9 @@ function check_collision_flowers()
     if collide(player, this_flower) == true then didcollide = true end
   end
   for this_flower in all(lilacs) do
+    if collide(player,this_flower) == true then didcollide = true end
+  end
+  for this_flower in all(venus) do
     if collide(player,this_flower) == true then didcollide = true end
   end
   for this_bush in all(rosebushes) do
@@ -320,6 +376,8 @@ function update_game()
   if gamestate.timeleft > 0 then gamestate.timeleft -= 1 end
  end
  gamestate.frame += 1
+ update_mushroom()
+ update_flowers()
  update_candle()
  update_bugs()
  update_viewport()
@@ -355,6 +413,7 @@ function update_title_screen()
   gamestate.mode=1
   title.state=0
   title.transition_frame=0
+  music(o)
  end
  if title.state == 1 then
    title.transition_frame += 1
@@ -382,6 +441,14 @@ function update_viewport()
  if viewport.y > 64 then viewport.y=64 end
 end
 
+function update_flowers()
+  for this_venus in all(venus) do
+    if this_venus.frame >= 24 then this_venus.frame = 0 end
+    if this_venus.frame < 12 then this_venus.sprite = 204 else this_venus.sprite = 205 end
+    this_venus.frame += 1    
+  end  
+end
+
 function update_candle()
  if candle.lit == true then
   if candle.frame >=14 then candle.frame = 0 end
@@ -390,17 +457,64 @@ function update_candle()
  end
 end
 
+function update_mushroom()
+ -- 0 small mushroom
+ -- 250 med. mushroom plain
+ -- 500 med. mushroom dots
+ -- 750 lg mushroom plain
+ -- 1000 lg mushroom dots
+ if mushroom.hp > 999 then
+    mushroom.size = 5
+    mushroom.hitbox_x = 0
+    mushroom.hitbox_y = 0
+    mushroom.hitbox_w = 16
+    mushroom.hitbox_h = 16
+    mushroom.x = 56
+    mushroom.y = 48
+  else
+    if mushroom.hp > 749 then
+      mushroom.size = 4
+      mushroom.hitbox_x = 0
+      mushroom.hitbox_y = 0
+      mushroom.hitbox_w = 16
+      mushroom.hitbox_h = 16
+      mushroom.x = 56
+      mushroom.y = 48
+    else
+      if mushroom.hp > 499 then
+        mushroom.size = 3
+        mushroom.hitbox_x = 0
+        mushroom.hitbox_y = 0
+        mushroom.hitbox_w = 8
+        mushroom.hitbox_h = 8
+        mushroom.x = 60
+        mushroom.y = 56
+      else
+        if mushroom.hp > 249 then
+          mushroom.size = 2
+          mushroom.hitbox_x = 0
+          mushroom.hitbox_y = 0
+          mushroom.hitbox_w = 8
+          mushroom.hitbox_h = 8
+          mushroom.x = 60
+          mushroom.y = 56
+        end
+      end
+    end
+  end
+end
+
 function update_bugs()
   for this_moth in all(moths) do
     if this_moth.frame >= 30 then
-      gamestate.petals += 5
+      gamestate.petals += this_moth.addpetals
       this_moth.frame = 0
     end
     this_moth.frame += 1
   end
   for this_wisp in all(wisps) do
     if this_wisp.frame >= 30 then
-      gamestate.petals += 1
+      gamestate.petals += this_wisp.addpetals
       this_wisp.frame = 0
     end
     this_wisp.frame += 1
@@ -414,11 +528,15 @@ function update_cloud()
  local cloud_x = flr((player.x+2)/8)
  local cloud_y = flr((player.y+2)/8)
  local cloud_loc = (cloud_y*16) + cloud_x
- cloud[cloud_loc]=0
+ cloud[cloud_loc]=0 
  if cloud_x -1 >= 0 then cloud[cloud_loc-1] = 0 end
  if cloud_x +1 <= 16 then cloud[cloud_loc+1] = 0 end
  if cloud_y -1 >= 0 then cloud[cloud_loc-16] = 0 end
  if cloud_y +1 <=16 then cloud[cloud_loc+16] = 0 end
+ if cloud_loc-17 >= 0 then cloud[cloud_loc-17] = 0 end
+ if cloud_loc-15 >= 0 then cloud[cloud_loc-15] = 0 end
+ if cloud_loc+15 <= 255 then cloud[cloud_loc+15] = 0 end
+ if cloud_loc+17 <= 255 then cloud[cloud_loc+17] = 0 end
 end
 
 function update_menu()
@@ -431,7 +549,7 @@ function update_menu()
   if btnp(4) then
     if menu.position == 1 then
       if gamestate.petals >= prices.mushroom then
-        mushroom.hp += 1
+        mushroom.hp += 1 --default 1
         gamestate.petals -= prices.mushroom
         gamestate.shroom_price_hike *= gamestate.hike_rate
         update_prices()
@@ -452,8 +570,8 @@ function update_menu()
   if menu.position == 3 then
     if (gamestate.petals >= prices.match and player.matches < 1)then
         player.matches += 1
+        gamestate.matches_bought += 1
         gamestate.petals -= prices.match
-        gamestate.match_price_hike *= gamestate.hike_rate
         update_prices()
       else 
         sfx(0)
@@ -480,8 +598,10 @@ end
 function update_prices()
   prices.mushroom = flr(gamestate.shroom_price_hike * original_prices.mushroom)
   prices.wisp = flr(gamestate.bug_price_hike * original_prices.wisp)
-  prices.match = flr(gamestate.match_price_hike * original_prices.match)
-  menu_items[1] = "shroom " .. prices.mushroom
+  if gamestate.matches_bought == 0 then prices.match = 25 end
+  if gamestate.matches_bought == 1 then prices.match = 2500 end
+  if gamestate.matches_bought >= 2 then prices.match = 5000 end
+  menu_items[1] = "berry  " .. prices.mushroom
   menu_items[2] = "wisp   " .. prices.wisp
   menu_items[3] = "match  " .. prices.match
   if candle.lit == true then
@@ -500,6 +620,7 @@ function draw_game()
  map(0,0,0,0,16,16,0)
  map(16,0,0,0,16,16,0)
  draw_flowers()
+ draw_mushroom()
  draw_cloud()
  clip()
  draw_header()
@@ -581,6 +702,9 @@ function draw_flowers()
       spr(32,this_bush.x,this_bush.y)
     end      
   end
+  for this_flower in all(venus) do
+    spr(this_flower.sprite + this_flower.sprite_offset, this_flower.x, this_flower.y)
+  end
   sspr(8,16,16,16,fairycircle.x,fairycircle.y)
   spr(candle.sprite,candle.x,candle.y)
 end
@@ -610,6 +734,18 @@ function draw_header()
  if player.matches >= 1 then spr(17,viewport.x+56,viewport.y+1) end
  local timemsg = time_m .. ":" .. time_s
  print (timemsg,viewport.x+24,viewport.y)
+end
+
+function draw_mushroom()
+  if mushroom.size <=3 then
+    spr(127+mushroom.size,mushroom.x,mushroom.y)
+  end
+  if mushroom.size == 4 then
+    sspr(0,72,16,16,mushroom.x,mushroom.y)
+  end
+  if mushroom.size == 5 then
+    sspr(16,72,16,16,mushroom.x,mushroom.y)
+  end
 end
 
 
@@ -642,10 +778,7 @@ function _init()
   poke(0x5f2c,3)
   init_world()
   init_cloud()
---  new_daff(40,40,false)
---  new_daff(50,40,true)
---  new_lilac(60,40,true)
---  new_lilac(70,40,false)
+  init_flowers()
   new_rosebush(8,8,false,500)
 end
 
@@ -656,7 +789,7 @@ function _update()
  if gamestate.mode==1 then
   update_player()
   update_cloud()
-  update_game()
+  update_game()  
   else
    if gamestate.mode==2 then
     update_game()
@@ -673,10 +806,9 @@ function _draw()
    draw_menu_fairy()
    color(0)
    print("midnight",3,5)
+   print("faerie",3,11)
    color(2)
    print("midnight",2,4)
-   color(0)
-   print("faerie",3,11)
    color(12)
    print("faerie",2,10)
  end
