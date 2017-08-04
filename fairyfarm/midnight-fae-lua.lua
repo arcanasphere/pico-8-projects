@@ -14,6 +14,8 @@ function init_world ()
   wisps=0,
   moths=0,
   matches_bought=0,
+  incense_lit=0,
+  victory = false,
  }
  
  title = {
@@ -25,8 +27,11 @@ function init_world ()
   fairy_y=16,
   fairy_frame=0,
   cloud_x = -18,
-  cloud_y = 6
- }
+  cloud_y = 6,
+  msg_frame=-64,
+  msg_speed=2,
+  bigmsg = "you are a faerie. every night at midnight, the cyclops stomps across your faerie circle. tonight you have a perfect plan. distract the cyclops with a giant strawberry. find the rose bush. use rose petals to grow your strawberry. hire wisps to gather petals.  draw moths to the flame to hire stronger allies.  sweet smelling incense will make the strawberry smell juicier.  tonight, the forest will know peace.  tonight the forest will know . . . . . . . . the midnight faerie",
+}
 
  player = {
   x=62,
@@ -86,6 +91,9 @@ function init_world ()
  venus = {}
  venuscount = 0
  
+ incense  = {}
+ incensecount = 0
+ 
  venus_map = {
 		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -144,14 +152,15 @@ function init_world ()
  }
   
  cyclops = {
-  x=128,
-  y=32,
+  x=32,
+  y=128,
   hitbox_x=0,
   hitbox_y=0,
   hitbox_w=64,
   hitbox_h=32,
   frame=0,
-  hp=1000
+  hp=1000,
+  speed=56/(30*30), --56 pixels divided by (30 seconds times 30 frames per second)
  }
 
 end
@@ -261,6 +270,7 @@ function new_wisp()
   wisps[gamestate.wisps].frame = 0
   wisps[gamestate.wisps].maxframe = 30
   wisps[gamestate.wisps].addpetals = 1
+  wisps[gamestate.wisps].y=flr(rnd(15))
 end
 
 function new_moth()
@@ -269,10 +279,23 @@ function new_moth()
   moths[gamestate.moths].frame = 0
   moths[gamestate.moths].maxframe = 30
   moths[gamestate.moths].addpetals = 5  --default 5
+  moths[gamestate.moths].y = flr(rnd(15))
 end
 
 
-
+function new_incense(x,y)
+  incensecount += 1
+  incense[incensecount] = obj:new()
+  incense[incensecount].sprite = 24
+  incense[incensecount].x = x
+  incense[incensecount].y = y
+  incense[incensecount].lit = false
+  incense[incensecount].frame = 0
+  incense[incensecount].hitbox_x = 1
+  incense[incensecount].hitbox_y = 1
+  incense[incensecount].hitbox_w = 6
+  incense[incensecount].hitbox_h = 6
+end
 
 
 
@@ -293,6 +316,11 @@ function init_flowers()
    if venus_map[i] == 2 then new_venus(count_x*8,count_y*8,"red") end
    count_x += 1
  end
+end
+
+function init_incense()
+  new_incense(40,120)
+  new_incense(120,120)
 end
 
 function init_cloud()
@@ -339,10 +367,22 @@ function check_collision_flowers()
   for this_bush in all(rosebushes) do
     if collide(player,this_bush) == true then 
       didcollide = true
+      cloud[0]=0
+      cloud[1]=0
+      cloud[16]=0
+      cloud[17]=0
+      cloud[32]=0
+      cloud[33]=0
      if player.petals == 0 and this_bush.petals > 0 then
        player.petals +=1
        this_bush.petals -= 1
      end
+    end
+  end
+  for this_incense in all(incense) do
+    if collide(player, this_incense) == true then 
+     check_incense(this_incense)
+     didcollide = true
     end
   end
   if collide(player,fairycircle) then
@@ -364,6 +404,15 @@ function check_collision_flowers()
  return didcollide
 end
 
+function check_incense(this_i)
+  if this_i.lit == false and player.matches > 0 then
+    player.matches -= 1
+    if gamestate.incense_lit < 1 then mushroom.hp += 250 else mushroom.hp += 500 end
+    gamestate.incense_lit += 1
+    this_i.lit = true
+  end
+end
+
 
 
 
@@ -380,6 +429,8 @@ function update_game()
  update_flowers()
  update_candle()
  update_bugs()
+ update_incense()
+ update_cyclops()
  update_viewport()
  camera(viewport.x, viewport.y)
  update_petals()
@@ -413,7 +464,7 @@ function update_title_screen()
   gamestate.mode=1
   title.state=0
   title.transition_frame=0
-  music(o)
+  music(0,200)
  end
  if title.state == 1 then
    title.transition_frame += 1
@@ -510,6 +561,11 @@ function update_bugs()
       gamestate.petals += this_moth.addpetals
       this_moth.frame = 0
     end
+    if this_moth.frame < 15 then
+     this_moth.x = 64 - (52*(this_moth.frame/15))
+    else
+     this_moth.x = 12 + (52*((this_moth.frame-15)/15))
+    end
     this_moth.frame += 1
   end
   for this_wisp in all(wisps) do
@@ -517,7 +573,23 @@ function update_bugs()
       gamestate.petals += this_wisp.addpetals
       this_wisp.frame = 0
     end
+    if this_wisp.frame < 15 then
+     this_wisp.x = 64 - (52*(this_wisp.frame/15))
+    else
+     this_wisp.x = 12 + (52*((this_wisp.frame-15)/15))
+    end
     this_wisp.frame += 1
+    -- print ("x " .. this_wisp.x .. " y " .. this_wisp.y .. " f " .. this_wisp.frame)
+  end
+end
+
+function update_incense()
+  for this_stench in all(incense) do
+    if this_stench.lit == true then
+      if this_stench.frame >= 18 then this_stench.frame = 0 end
+      if this_stench.frame < 9 then this_stench.sprite = 25 else this_stench.sprite = 26 end
+      this_stench.frame += 1
+    end
   end
 end
 
@@ -595,6 +667,26 @@ function update_petals()
   if gamestate.petals > 9999 then gamestate.petals = 9999 end
 end
 
+function update_cyclops() 
+  if gamestate.timeleft <= 30 then
+   if cyclops.frame >= 56 then cyclops.frame = 0 end
+   cyclops.y -= cyclops.speed
+   cyclops.frame += 1
+  end
+  if collide(cyclops,mushroom) then
+    if mushroom.hp >= 1000 then
+     gamestate.victory = true
+     music(-1,500)
+     gamestate.mode=3
+    end
+  end
+  if collide(cyclops,fairycircle) then
+    gamestate.victory = false
+    music(-1,500)
+    gamestate.mode=3
+  end
+end
+
 function update_prices()
   prices.mushroom = flr(gamestate.shroom_price_hike * original_prices.mushroom)
   prices.wisp = flr(gamestate.bug_price_hike * original_prices.wisp)
@@ -622,6 +714,8 @@ function draw_game()
  draw_flowers()
  draw_mushroom()
  draw_cloud()
+ if gamestate.timeleft < 31 then draw_cyclops() end
+ draw_bugs()
  clip()
  draw_header()
  spr(player.sprite,player.x,player.y)
@@ -637,6 +731,15 @@ function draw_title_screen()
  end
  spr(64,title.cloud_x,title.cloud_y)
  spr(65,title.cloud_x+8,title.cloud_y)
+end
+
+function draw_bugs()
+  for this_moth in all(moths) do
+    if this_moth.frame < 15 then pset(this_moth.x + (rnd(3)-2),this_moth.y + (this_moth.frame/2),6) else pset(this_moth.x + (rnd(3)-2),this_moth.y + (7.5 - ((this_moth.frame)-15)/2),6) end
+  end
+  for this_wisp in all(wisps) do
+    if this_wisp.frame < 15 then pset(this_wisp.x + (rnd(3)-2),this_wisp.y + (this_wisp.frame/2),12) else pset(this_wisp.x + (rnd(3)-2),this_wisp.y + (7.5 - ((this_wisp.frame)-15)/2),12) end
+  end
 end
 
 
@@ -660,7 +763,7 @@ function draw_menu()
    menu_item_count += 1
  end
  color(4)
- spr(21,7+viewport.x,39+viewport.y)
+ spr(128,7+viewport.x,39+viewport.y)
  print(mushroom.hp, 13+viewport.x,39+viewport.y)
  color(12)
  spr(13,7+viewport.x,45+viewport.y)
@@ -705,6 +808,9 @@ function draw_flowers()
   for this_flower in all(venus) do
     spr(this_flower.sprite + this_flower.sprite_offset, this_flower.x, this_flower.y)
   end
+  for this_stench in all(incense) do
+    spr(this_stench.sprite,this_stench.x,this_stench.y)
+  end
   sspr(8,16,16,16,fairycircle.x,fairycircle.y)
   spr(candle.sprite,candle.x,candle.y)
 end
@@ -719,6 +825,14 @@ function draw_cloud()
     end
     if cloud[i] == 1 then spr(194,cloud_x*8,cloud_y*8) end
     cloud_x += 1
+  end
+end
+
+function draw_cyclops()
+  if cyclops.frame < 28 then
+    sspr(104,24,24,8,32,cyclops.y,64,16)
+  else
+    sspr(104,24,24,8,32,cyclops.y,64,16,true,false)
   end
 end
 
@@ -763,9 +877,33 @@ function draw_menu_fairy()
   end
 end
 
+function draw_title_msg()
+ local msglen = #title.bigmsg
+ if title.msg_frame > (msglen * 4) + 64 then title.msg_frame = -64 end
+ color(13)
+ print(title.bigmsg,1 -title.msg_frame, 59)
+ clip(0,58,64,3)
+ color(1)
+ print(title.bigmsg,0 -title.msg_frame, 58)
+ clip(0,61,64,3)
+ color(2)
+ print(title.bigmsg,0 -title.msg_frame, 58)
+ clip()
+ title.msg_frame += (1/title.msg_speed)
+end
 
 
 
+function draw_game_over()
+ camera(0,0)
+ if gamestate.victory == true then
+   color(12)
+   print("you win!",16,29)
+ else
+   color(8)
+   print("you lose",16,29)
+ end
+end
 
 
 
@@ -779,7 +917,9 @@ function _init()
   init_world()
   init_cloud()
   init_flowers()
+  init_incense()
   new_rosebush(8,8,false,500)
+  gamestate.timeleft = 31
 end
 
 function _update()
@@ -790,10 +930,13 @@ function _update()
   update_player()
   update_cloud()
   update_game()  
-  else
+ else
    if gamestate.mode==2 then
     update_game()
     update_menu()
+      else if gamestate.mode== 3 then
+        draw_game_over()
+      end
    end
  end
 end
@@ -811,12 +954,16 @@ function _draw()
    print("midnight",2,4)
    color(12)
    print("faerie",2,10)
+   draw_title_msg()
  end
  if gamestate.mode == 1 then
   draw_game()
  end
  if gamestate.mode == 2 then
   draw_game()
-  draw_menu()
+  draw_menu()  
+ end
+ if gamestate.mode == 3 then
+   draw_game_over()
  end
 end
