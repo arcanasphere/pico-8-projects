@@ -7,7 +7,7 @@ __lua__
 function init_world ()
  gamestate={
   mode=0, -- 0=into, 1=game, 2=menu, 3=info, 4=end
-  timeleft=300,
+  timeleft=240,
   shroom_price_hike = 1,
   bug_price_hike = 1,
   match_price_hike = 1,
@@ -33,7 +33,7 @@ function init_world ()
   cloud_y = 6,
   msg_frame=-64,
   msg_speed=2,
-  bigmsg = "you are a faerie. every night at midnight, the cyclops stomps across your faerie circle. tonight you have a perfect plan. distract the cyclops with a giant strawberry. find the rose bush. use rose petals to grow your strawberry. hire wisps to gather petals.  draw moths to the flame to hire stronger allies.  sweet smelling incense will make the strawberry smell juicier.  tonight, the forest will know peace.  tonight the forest will know . . . . . . . . the midnight faerie",
+  bigmsg = "you are a faerie. every night at midnight, the cyclops stomps across your faerie circle. tonight you have a perfect plan. distract the cyclops with a giant strawberry. find the rose bush. use rose petals to grow your strawberry. hire wisps to gather petals.  draw moths to the flame to hire stronger allies.  sweet smelling incense will make the strawberry grow juicier.  tonight, the fields will know peace.  tonight the forest will know . . . . . . . . the midnight faerie",
 }
 
  player = {
@@ -47,7 +47,8 @@ function init_world ()
   speed=(16/30),
   frame=0,
   petals=0,
-  matches=0
+  matches=0,
+  alive=true,
  }
 
  cloud={}
@@ -163,7 +164,7 @@ function init_world ()
   hitbox_h=32,
   frame=0,
   hp=1000,
-  speed=56/(30*30), --56 pixels divided by (30 seconds times 30 frames per second)
+  speed=51/(30*30), --56 pixels divided by (30 seconds times 30 frames per second)
  }
 
 end
@@ -401,6 +402,7 @@ function check_collision_flowers()
      menu.items += 1
      player.matches -= 1
      candle.lit = true
+     play_flame()
    end
    didcollide = true
   end
@@ -413,6 +415,7 @@ function check_incense(this_i)
     if gamestate.incense_lit < 1 then mushroom.hp += 250 else mushroom.hp += 500 end
     gamestate.incense_lit += 1
     this_i.lit = true
+    play_flame()
   end
 end
 
@@ -473,10 +476,16 @@ function update_title_screen()
    title.transition_frame += 1
  end
  if btnp(4) then
-   if title.state==0 then title.state=1 end
+   if title.state==0 then 
+    title.state=1
+    play_select()
+   end
  end
  if btnp(5) then
-   if title.state==0 then title.state=1 end
+   if title.state==0 then
+    title.state=1
+    play_select()
+   end
  end
  if title.fairy_frame >= 150 then title.fairy_frame = 0 end
  if title.fairy_frame < 75 then title.fairy_y += 0.2 else title.fairy_y -= 0.2 end
@@ -617,9 +626,11 @@ end
 function update_menu()
   if btnp(2) then
     if menu.position > 1 then menu.position -= 1 else menu.position = menu.items end
+    play_arrow()
   end
   if btnp(3) then
     if menu.position < menu.items then menu.position += 1 else menu.position = 1 end
+    play_arrow()
   end
   if btnp(4) then
     if menu.position == 1 then
@@ -628,6 +639,7 @@ function update_menu()
         gamestate.petals -= prices.mushroom
         gamestate.shroom_price_hike *= gamestate.hike_rate
         update_prices()
+        play_select()
       else 
         sfx(0)
       end
@@ -638,6 +650,7 @@ function update_menu()
         gamestate.petals -= prices.wisp
         gamestate.bug_price_hike *= gamestate.hike_rate
         update_prices()
+        play_select()
       else 
         sfx(0)
       end
@@ -648,6 +661,7 @@ function update_menu()
         gamestate.matches_bought += 1
         gamestate.petals -= prices.match
         update_prices()
+        play_select()
       else 
         sfx(0)
       end
@@ -658,6 +672,7 @@ function update_menu()
         gamestate.petals -= prices.moth
         gamestate.bug_price_hike *= gamestate.hike_rate
         update_prices()
+        play_select()
       else 
         sfx(0)
       end
@@ -688,11 +703,17 @@ function update_cyclops()
     music(-1,500)
     gamestate.mode=3
   end
+  if collide(player,cyclops) then
+    gamestate.victory = false
+    player.alive = false
+    music(-1,500)
+    gamestate.mode=3
+  end
 end
 
 function update_prices()
   prices.mushroom = flr(gamestate.shroom_price_hike * original_prices.mushroom)
-  prices.wisp = flr(gamestate.bug_price_hike * original_prices.wisp)
+  if (wisps==0 and moths==0) then prices.wisp = 5 else prices.wisp = flr(gamestate.bug_price_hike * original_prices.wisp) end
   if gamestate.matches_bought == 0 then prices.match = 25 end
   if gamestate.matches_bought == 1 then prices.match = 2500 end
   if gamestate.matches_bought >= 2 then prices.match = 5000 end
@@ -702,6 +723,13 @@ function update_prices()
   if candle.lit == true then
    prices.moth = flr(gamestate.bug_price_hike * original_prices.moth)
    menu_items[4] = "moth   " .. prices.moth
+  end
+end
+
+function update_game_over()
+  if btnp(4) then
+    reset_game()
+    gamestate.mode=0
   end
 end
 
@@ -900,12 +928,107 @@ end
 function draw_game_over()
  camera(0,0)
  if gamestate.victory == true then
-   color(12)
+    color(12)
    print("you win!",16,29)
  else
-   color(8)
-   print("you lose",16,29)
+   if player.alive==true then
+     color(8)
+     print("you lose",16,29)
+   else
+     color(8)
+     print("lol dead",16,29)
+   end
  end
+end
+
+--
+
+-- sound effects
+function play_arrow()
+ sfx(11)
+end
+
+function play_select()
+  sfx(12)
+end
+
+function play_flame()
+ sfx(13)
+end
+
+
+
+
+
+
+
+------- new game
+
+function reset_game()
+  for this_wisp in all(wisps) do
+    del(this_wisp)
+  end
+  wisps = {}
+  for this_moth in all(moths) do
+    del(this_moth)
+  end
+  moths = {}
+  
+  for this_stench in all(incense) do
+    this_stench.lit=false
+    this_stench.sprite = 24
+  end
+  
+  gamestate.timeleft = 240
+  gamestate.petals = 0
+  player.petals = 0
+  player.x = 62
+  player.y = 25
+  player.matches = 0
+  gamestate.frame=0
+  gamestate.petals=0
+  gamestate.wisps=0
+  gamestate.moths=0
+  gamestate.matches_bought=0
+  gamestate.incense_lit=0
+  gamestate.victory = false
+  
+  gamestate.shroom_price_hike = 1
+  gamestate.bug_price_hike = 1
+  gamestate.match_price_hike = 1
+
+  candle.sprite=18
+  candle.lit=false
+
+  prices.mushroom = original_prices.mushroom
+  prices.wisp = original_prices.wisp/2
+  prices.match = original_prices.match
+  prices.moth = original_prices.moth
+ 
+  mushroom.x=63
+  mushroom.y=58
+  mushroom.hitbox_x=0
+  mushroom.hitbox_y=0
+  mushroom.hitbox_w=2
+  mushroom.hitbox_h=2
+  mushroom.hp=0
+  mushroom.size=1
+
+  cyclops.x=32
+  cyclops.y=128
+  cyclops.frame=0
+  
+  for this_item in all(menu_items) do
+    del(menu_items,this_item)
+  end
+  menu_items = {}
+  menu_items[1] = "berry  " .. prices.mushroom
+  menu_items[2] = "wisp    "  .. prices.wisp
+  menu_items[3] = "match  " .. prices.match
+
+  menu.items=3
+  
+  init_cloud()  
 end
 
 
@@ -938,6 +1061,7 @@ function _update()
     update_game()
     update_menu()
       else if gamestate.mode== 3 then
+        update_game_over()
         draw_game_over()
       end
    end
@@ -1148,9 +1272,9 @@ __sfx__
 01300000282142821228212282111c2111c21221211212112321123212232122321223212232122321223215282142821128212282122f2112f2122d2112d2122821128212282122821228212282122821228215
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+010400002102023030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+010600002f12434155341050000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+01100000096240b621106210962500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
