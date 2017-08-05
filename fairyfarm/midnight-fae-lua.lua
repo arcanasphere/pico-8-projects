@@ -31,7 +31,7 @@ function init_world ()
   cloud_y = 6,
   msg_frame=-64,
   msg_speed=2,
-  bigmsg = "you are a faerie. every night at midnight, the cyclops stomps across your faerie circle. tonight you have a perfect plan. distract the cyclops with a giant strawberry. find the rose bush. use rose petals to grow your strawberry. hire wisps to gather petals.  draw moths to the flame to hire stronger allies.  sweet smelling incense will make the strawberry grow juicier.  tonight, the fields will know peace.  tonight the fields will know . . . . . . . . the midnight faerie",
+  bigmsg = "you are a faerie. every night at midnight, the cyclops stomps across your faerie circle. tonight you have a perfect plan. distract the cyclops with a giant strawberry. find the rose bush. use rose petals to grow your strawberry. hire wisps to gather petals. draw moths to the flame to hire stronger allies. sweet smelling incense will make the strawberry grow juicier. tonight, the fields will know peace. tonight the fields will know . . . . . . . . the midnight faerie",
 }
 
  player = {
@@ -478,12 +478,14 @@ function update_title_screen()
  if btnp(4) then
    if title.state==0 then 
     title.state=1
+    music(-1,250)
     play_select()
    end
  end
  if btnp(5) then
    if title.state==0 then
     title.state=1
+    music(-1,250)
     play_select()
    end
  end
@@ -911,6 +913,7 @@ end
 function draw_title_msg()
  local msglen = #title.bigmsg
  if title.msg_frame > (msglen * 4) + 64 then title.msg_frame = -64 end
+ clip(0,58,64,8)
  color(13)
  print(title.bigmsg,1 -title.msg_frame, 59)
  clip(0,58,64,3)
@@ -931,7 +934,7 @@ function draw_game_over()
    color(13)
    print("you win!",2,4)
    print("cyclops loves",2,10)
-   print("his",2,16)
+   print("its",2,16)
    color(14)
    print("strawberry",18,16)
    sspr(104,72,24,24,16,16,48,48)
@@ -940,8 +943,12 @@ function draw_game_over()
      color(8)
      print("you lose",16,29)
    else
-     color(8)
-     print("lol dead",16,29)
+    draw_title_screen()
+    sspr(56,16,8,16,6,31,16,32)
+    color(13)
+    print("you have died",4,9)
+    color(12)
+    print("game over",4,15)
    end
  end
 end
@@ -1050,8 +1057,7 @@ function _init()
   init_flowers()
   init_incense()
   new_rosebush(8,8,false,500)
-  gamestate.timeleft = 31
-  mushroom.hp = 1001
+  music(8,125)
 end
 
 function _update()
