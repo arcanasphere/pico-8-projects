@@ -824,7 +824,7 @@ function draw_menu()
  end
  color(4)
  spr(128,7+viewport.x,39+viewport.y)
- print(mushroom.hp, 13+viewport.x,39+viewport.y)
+ print(mushroom.hp .. " hp", 13+viewport.x,39+viewport.y)
  color(12)
  spr(13,7+viewport.x,45+viewport.y)
  print(gamestate.wisps, 13+viewport.x, 45+viewport.y)
@@ -1005,6 +1005,8 @@ function draw_manual()
     color(6)
     print("feed the cyclops",0,16)
     print("save your home",0,22)
+    print("1000 hp should",0,30)
+    print("suffice",0,36)
   end
   if manual.page == 3 then
     spr(32,0,0)
