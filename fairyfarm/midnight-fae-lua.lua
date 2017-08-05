@@ -26,6 +26,7 @@ function init_world ()
   fairy_x=16,
   fairy_y=16,
   fairy_frame=0,
+  fairy_flap=0,
   cloud_x = -18,
   cloud_y = 6,
   msg_frame=-64,
@@ -161,7 +162,7 @@ function init_world ()
   hitbox_h=32,
   frame=0,
   hp=1000,
-  speed=51/(30*30), --56 pixels divided by (30 seconds times 30 frames per second)
+  speed=64/(30*30), --56 pixels divided by (30 seconds times 30 frames per second)
  }
 
 end
@@ -463,6 +464,8 @@ function update_player ()
 end
 
 function update_title_screen() 
+ if title.fairy_flap >=24 then title.fairy_flap = 0 end
+ title.fairy_flap += 1
  if ( title.state == 1 and title.transition_frame == 8 ) then
   gamestate.mode=1
   title.state=0
@@ -736,7 +739,7 @@ end
 -- draw functions
 
 function draw_game()
- clip(0,6,128,122)
+ clip(0,6,64,58)
  map(0,0,0,0,16,16,0)
  map(16,0,0,0,16,16,0)
  draw_flowers()
@@ -895,7 +898,7 @@ end
 function draw_menu_fairy()
   local x = title.fairy_x
   local y = title.fairy_y
-  for i=0,4 do
+  for i=0,3 do
     spr(71+i,x+(i*8),y)
     spr(87+i,x+(i*8),y+8)
     spr(104,x+8,y+16)
@@ -925,8 +928,13 @@ end
 function draw_game_over()
  camera(0,0)
  if gamestate.victory == true then
-    color(12)
-   print("you win!",16,29)
+   color(13)
+   print("you win!",2,4)
+   print("cyclops loves",2,10)
+   print("his",2,16)
+   color(14)
+   print("strawberry",18,16)
+   sspr(104,72,24,24,16,16,48,48)
  else
    if player.alive==true then
      color(8)
@@ -1042,6 +1050,8 @@ function _init()
   init_flowers()
   init_incense()
   new_rosebush(8,8,false,500)
+  gamestate.timeleft = 31
+  mushroom.hp = 1001
 end
 
 function _update()
@@ -1058,7 +1068,6 @@ function _update()
     update_menu()
       else if gamestate.mode== 3 then
         update_game_over()
-        draw_game_over()
       end
    end
  end
@@ -1069,7 +1078,7 @@ function _draw()
  cls()
  if gamestate.mode == 0 then
    draw_title_screen()
-   draw_menu_fairy()
+   if title.fairy_flap < 16 then draw_menu_fairy() else sspr(88,32,25,32,title.fairy_x+2,title.fairy_y) end
    color(0)
    print("midnight",3,5)
    print("faerie",3,11)
