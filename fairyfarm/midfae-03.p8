@@ -491,9 +491,11 @@ function update_title_screen()
    end
  end
  if btnp(5) then
-  gamestate.mode = 4
+  gamestate.mode=4
   music(-1,250)
   play_select()
+  title.msg_frame = -64
+  title.frame=0
  end
  if title.fairy_frame >= 150 then title.fairy_frame = 0 end
  if title.fairy_frame < 75 then title.fairy_y += 0.2 else title.fairy_y -= 0.2 end
@@ -752,12 +754,11 @@ function update_manual()
     if manual.page < manual.pages then manual.page += 1 else manual.page = 1 end
   end
   if btnp(4) then
+    manual.page = 1
+    title.frame = 0
+    title.msg_frame = -64
     gamestate.mode = 0
-    manual.page = 1
-  end
-  if btnp(5) then
-    gamestate.mode = 4
-    manual.page = 1
+    music(8,125)
   end
 end
 
@@ -1148,6 +1149,8 @@ function reset_game()
   init_cloud()  
   
   music(8,125)
+  
+  title.frame=0
 end
 
 
