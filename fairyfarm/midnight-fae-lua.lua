@@ -3,7 +3,7 @@
 
 function init_world ()
  gamestate={
-  mode=0, -- 0=into, 1=game, 2=menu, 3=info, 4=end
+  mode=0, -- 0=into, 1=game, 2=menu, 3=end, 4=manual
   timeleft=240,
   shroom_price_hike = 1,
   bug_price_hike = 1,
@@ -31,7 +31,7 @@ function init_world ()
   cloud_y = 6,
   msg_frame=-64,
   msg_speed=2,
-  bigmsg = "you are a faerie. every night at midnight, the cyclops stomps across your faerie circle. tonight you have a perfect plan. distract the cyclops with a giant strawberry. find the rose bush. use rose petals to grow your strawberry. hire wisps to gather petals. draw moths to the flame to hire stronger allies. sweet smelling incense will make the strawberry grow juicier. tonight, the fields will know peace. tonight the fields will know . . . . . . . . the midnight faerie",
+  bigmsg = "x=manual  z=start    x=manual  z=start        you are a faerie. every night at midnight, the cyclops stomps across your faerie circle. tonight you have a perfect plan. distract the cyclops with a giant strawberry. find the rose bush. use rose petals to grow your strawberry. hire wisps to gather petals. draw moths to the flame to hire stronger allies. sweet smelling incense will make the strawberry grow juicier. tonight, the fields will know peace. tonight the fields will know . . . . . . . . the midnight faerie",
 }
 
  player = {
@@ -163,6 +163,11 @@ function init_world ()
   frame=0,
   hp=1000,
   speed=64/(30*30), --56 pixels divided by (30 seconds times 30 frames per second)
+ }
+
+ manual = {
+  page=1,
+  pages=5,
  }
 
 end
@@ -483,11 +488,9 @@ function update_title_screen()
    end
  end
  if btnp(5) then
-   if title.state==0 then
-    title.state=1
-    music(-1,250)
-    play_select()
-   end
+  gamestate.mode = 4
+  music(-1,250)
+  play_select()
  end
  if title.fairy_frame >= 150 then title.fairy_frame = 0 end
  if title.fairy_frame < 75 then title.fairy_y += 0.2 else title.fairy_y -= 0.2 end
@@ -735,6 +738,26 @@ function update_game_over()
   end
 end
 
+function update_manual()
+  player.frame += 1
+  if player.frame >=16 then player.frame = 0 end
+  if player.frame > 8 then player.sprite=2 else player.sprite=1 end
+  if btnp(0) then
+    if manual.page > 1 then manual.page -= 1 else manual.page = manual.pages end
+  end
+  if btnp(1) then
+    if manual.page < manual.pages then manual.page += 1 else manual.page = 1 end
+  end
+  if btnp(4) then
+    gamestate.mode = 0
+    manual.page = 1
+  end
+  if btnp(5) then
+    gamestate.mode = 4
+    manual.page = 1
+  end
+end
+
 
 
 
@@ -940,8 +963,12 @@ function draw_game_over()
    sspr(104,72,24,24,16,16,48,48)
  else
    if player.alive==true then
+     draw_title_screen()
+     sspr(32,64,16,8,24,56)
      color(8)
-     print("you lose",16,29)
+     print("you lose",16,6)
+     print("your circle has",2,12)
+     print("been crushed",8,18)
    else
     draw_title_screen()
     sspr(56,16,8,16,6,31,16,32)
@@ -951,6 +978,81 @@ function draw_game_over()
     print("game over",4,15)
    end
  end
+end
+
+function draw_manual()
+  if manual.page  == 1 then
+    spr(player.sprite,0,0)
+    color(13)
+    print("you are a",6,0)
+    print("fairy",6,6)
+    color(6)
+    print("at midnight a",0,12)
+    print("cyclops crushes",0,18)
+    print("your home.",0,24)
+    color(13)
+    print("but not tonight",2,36)
+  end
+  if manual.page  == 2 then
+    spr(130,56,0)
+    color(14)
+    print("grow a",0,0)
+    print("strawberry",0,6)
+    color(6)
+    print("feed the cyclops",0,16)
+    print("save your home",0,22)
+  end
+  if manual.page == 3 then
+    spr(32,0,0)
+    spr(48,0,8)
+    color(3)
+    print("find the",10,0)
+    print("rose bush",10,6)
+    color(6)
+    spr(192,48,16)
+    spr(193,56,16)
+    spr(208,48,24)
+    spr(209,56,24)
+    sspr(8,16,16,16,48,16)
+    print("gather rose",0,18)
+    print("petals and",0,24)
+    print("return them",0,30)
+    print("to your fairy",0,36)
+    print("circle",0,42)
+  end  
+  if manual.page == 4 then
+    color(12)
+    print("hire helpers",8,0)
+    spr(13,0,6)
+    color(2)
+    print("wisps carry 1",8,6)
+    print("petal every",0,12)
+    print("second.",0,18)
+    spr(14,0,26)
+    print("moths carry",8,26)
+    print("even more petals",0,32)
+  end
+  if manual.page  == 5 then
+    spr(17,0,0)
+    color(9)
+    print("buy matches",6,0)
+    color(6)
+    print("light candles",0,8)
+    print("to attract moths",0,14)
+    
+    print("light incense",0,22)
+    print("to boost growth",0,28)
+    
+    spr(18,24,40)
+    spr(24,32,40)
+   -- buy matches
+  end
+  line(0,57,64,57,13)
+  color(1)
+  spr(15,-3,59,8,8,true,false)
+  spr(15,28,59)
+  print("pages",6,59)
+  print(manual.page .. "/" .. manual.pages,52,59)
 end
 
 --
@@ -1041,6 +1143,8 @@ function reset_game()
   menu.items=3
   
   init_cloud()  
+  
+  music(8,125)
 end
 
 
@@ -1077,6 +1181,7 @@ function _update()
       end
    end
  end
+ if gamestate.mode == 4 then update_manual() end
 end
 
 
@@ -1103,5 +1208,8 @@ function _draw()
  end
  if gamestate.mode == 3 then
    draw_game_over()
+ end
+ if gamestate.mode == 4 then
+   draw_manual()
  end
 end
