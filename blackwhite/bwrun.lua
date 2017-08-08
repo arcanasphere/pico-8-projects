@@ -41,27 +41,30 @@ end
 function player:update()
   local original_x = player.x
   local original_y = player.y  
+  local shadow_move = 0
+  local bg_move =0
   player.sprite = 2
+  
+  if btnp(4) and player.jumping == false then   
+   player.arc = player.jump_height        
+   player.y -= 4
+   player.jumping = true
+  end
   if btn(0) then
     player.x -= player.speed
     player.flipped = true
     player_walksprite()
-    update_background(1)
-    shadow.x += player.speed    
+    bg_move += 1
+    shadow_move += player.speed    
     check_player_collisions(original_x,original_y)
   end
   if btn(1) then
     player.x += player.speed
     player.flipped = false
     player_walksprite()
-    update_background(-1)
-    shadow.x -= player.speed
+    bg_move -= 1
+    shadow_move -= player.speed    
     check_player_collisions(original_x,original_y)
-  end
-  if btn(4) and player.jumping == false then   
-   player.arc = player.jump_height        
-   player.y -= 4
-   player.jumping = true
   end
   if player.jumping == true then
     player.y -= player.arc
@@ -72,6 +75,10 @@ function player:update()
   if player_landed() == true then
     player.y = 48
     player.jumping = false
+  end
+  if player.x ~= original_x then
+    update_background(bg_move)
+    shadow.x += shadow_move
   end
   player.frame += 1
 end
@@ -164,6 +171,7 @@ function create_gameblock(x,y)
   blocks[blockcount].hitbox_y = 0
   blocks[blockcount].hitbox_w = 8
   blocks[blockcount].hitbox_h = 8
+  blocks[blockcount].id = blockcount
 end
 
 function draw_gameblocks()
@@ -240,23 +248,29 @@ function collide(obj, other)
     other.y+other.hitbox_y < obj.y+obj.hitbox_y+obj.hitbox_h 
   then
     return true
+   else return false
   end
 end
 
 function check_player_collisions(original_x,original_y) 
+ local standing_on = 0
  for this_block in all(blocks) do   
    if collide(player,this_block) == true then
-     color (13)
-     if flr(player.y+16) == this_block.y and player.arc <= 0 then
-       player.jumping = false
-       player.y = flr(player.y)
-       player.arc = 0
+     if flr(player.y + 16 ) >= this_block.y and flr(player.y + 16) <= this_block.y - (flr(player.arc)+1) and player.arc <= 0 then
+      standing_on = this_block.id
      else
        player.x = original_x
      end
    else
      if player.y < 48 then player.jumping = true end
    end
+ end
+ if standing_on > 0 then
+   player.jumping = false
+   player.arc = 0
+   player.y = blocks[standing_on].y - 16
+   debugmsg = "by " .. blocks[standing_on].y .. " py " .. player.y
+ else debugmsg = "py " .. player.y .. "pa " .. player.arc
  end
 end
 
