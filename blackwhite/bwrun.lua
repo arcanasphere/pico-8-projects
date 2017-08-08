@@ -80,8 +80,7 @@ function player:update()
     update_background(bg_move)
     shadow.x += shadow_move
   end
-  player.frame += 1
-  just_jumped = true
+  player.frame += 1  
 end
 
 function player_walksprite()
@@ -137,6 +136,7 @@ function init_shadow()
  shadow.end_x = -24
  shadow.x = shadow.start_x
  shadow.speed = 24/30
+ shadow.width = 16
 end
 
 
@@ -190,7 +190,11 @@ function draw_gameblocks_shadow()
 end
 
 
-
+function create_smile_block(x,y)
+  local new_block = blockcount +1  ---- keep a permanent record of which block we're about to make.  Then gameblock will make most of it.
+  create_gameblock(x,y)
+  blocks[new_block].sprite = 1  
+end
 
 
 
@@ -271,6 +275,7 @@ function check_player_collisions(original_x,original_y)
    player.arc = 0
    player.y = blocks[standing_on].y - 16
    debugmsg = "by " .. blocks[standing_on].y .. " py " .. player.y
+   player_walksprite()
  else debugmsg = "py " .. player.y .. "pa " .. player.arc
  end
 end
@@ -293,10 +298,11 @@ function _init()
  cls()
  init_world()
  create_gameblock(48,56)
- create_gameblock(64,56)
+ create_smile_block(64,56)
  create_gameblock(80,56)
  
- create_gameblock(112,41)
+ create_gameblock(112,38)
+ create_smile_block(120,38)
 end
 
 function _update()
