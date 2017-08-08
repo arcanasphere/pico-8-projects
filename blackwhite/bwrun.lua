@@ -45,10 +45,10 @@ function player:update()
   local bg_move =0
   player.sprite = 2
   
-  if btnp(4) and player.jumping == false then   
+  if btn(4) and player.jumping == false then   
    player.arc = player.jump_height        
-   player.y -= 4
-   player.jumping = true
+   player.y -= 0.5
+   player.jumping = true   
   end
   if btn(0) then
     player.x -= player.speed
@@ -81,6 +81,7 @@ function player:update()
     shadow.x += shadow_move
   end
   player.frame += 1
+  just_jumped = true
 end
 
 function player_walksprite()
